@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TriON Plus - Real Estate Performance</title>
+    <!-- FontAwesome Icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <!-- Chart.js for Dynamic Dashboards -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0A1128;
+            --bg-card: #111C3A;
+            --bg-input: #1C2951;
+            --gold-accent: #D4AF37;
+            --gold-light: #F8E7A1;
+            --gold-gradient: linear-gradient(135deg, #D4AF37 0%, #AA7C11 100%);
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border-color: rgba(212, 175, 55, 0.25);
+            --sidebar-width: 260px;
+            --danger: #EF4444;
+            --success: #10B981;
+            --warning: #F59E0B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: #060B1E;
+            border-right: 1px solid var(--border-color);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--gold-accent);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: 1px;
+            margin-bottom: 35px;
+            padding-left: 10px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item button {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            text-align: left;
+            padding: 12px 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .nav-item.active button, .nav-item button:hover {
+            background: rgba(212, 175, 55, 0.12);
+            color: var(--gold-accent);
+            border-left: 4px solid var(--gold-accent);
+        }
+
+        .user-profile {
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gold-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .header h1 span {
+            color: var(--gold-accent);
+        }
+
+        /* Buttons & Controls */
+        .btn-gold {
+            background: var(--gold-gradient);
+            color: #000;
+            font-weight: 700;
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .btn-gold:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        /* KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .kpi-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--gold-accent);
+            margin: 8px 0 4px 0;
+        }
+
+        .kpi-subtext {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Tables & Charts Containers */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px 12px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 16px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+        }
+
+        /* Badges */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .badge-hot, .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+        .badge-warm, .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .badge-cold, .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
+
+        /* Funnel / Kanban View */
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .kanban-column {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 500px;
+        }
+
+        .kanban-column-header {
+            font-weight: 700;
+            color: var(--gold-accent);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .kanban-card {
+            background: var(--bg-dark);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .kanban-card:hover {
+            border-color: var(--gold-accent);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--gold-accent);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            padding: 25px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 { color: var(--gold-accent); }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: #fff;
+            outline: none;
+        }
+
+        /* AI Coach Cards Layout */
+        .ai-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .ai-card-item {
+            background: var(--bg-card);
+            border-left: 4px solid var(--gold-accent);
+            border-radius: 8px;
+            padding: 18px;
+        }
+
+        @media (max-width: 900px) {
+            .kanban-board {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div>
+            <div class="logo">
+                <i class="fa-solid fa-chart-line"></i> TriON Plus
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <button onclick="switchTab('dashboard', this)"><i class="fa-solid fa-house"></i> Dashboard TriON Plus</button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="switchTab('properties', this)"><i class="fa-solid fa-building"></i> Propiedades</button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="switchTab('leads', this)"><i class="fa-solid fa-users"></i> Clientes / Leads</button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="switchTab('funnel', this)"><i class="fa-solid fa-filter"></i> Funnel de Ventas</button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="switchTab('aicoach', this)"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Deal Coach</button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="switchTab('settings', this)"><i class="fa-solid fa-gear"></i> Configuración</button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="user-profile">
+            <div class="avatar">JV</div>
+            <div>
+                <strong style="font-size: 0.9rem; display: block;">Jean Vargas</strong>
+                <small style="color: var(--text-muted); font-size: 0.75rem;">Broker Senior</small>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+        <!-- 1. DASHBOARD VIEW -->
+        <section id="view-dashboard" class="view-section active">
+            <header class="header">
+                <div>
+                    <h1>Rendimiento <span>TriON Plus</span></h1>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Métricas operativas y ratios de conversión</p>
+                </div>
+            </header>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <span class="kpi-title">Volumen en Pipeline</span>
+                    <div class="kpi-value" id="kpi-volume">$0</div>
+                    <span class="kpi-subtext">Propiedades en gestión activa</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-title">Comisiones Proyectadas</span>
+                    <div class="kpi-value" id="kpi-commissions">$0</div>
+                    <span class="kpi-subtext">Calculado a 3% promedio</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-title">Leads Activos</span>
+                    <div class="kpi-value" id="kpi-leads">0</div>
+                    <span class="kpi-subtext">En proceso de prospección</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-title">Efectividad de Cierre</span>
+                    <div class="kpi-value" id="kpi-conversion">28.5%</div>
+                    <span class="kpi-subtext"><i class="fa-solid fa-arrow-up" style="color:var(--success);"></i> +4% esta semana</span>
+                </div>
+            </div>
+
+            <!-- Zona de Gráficos Interactivos (Chart.js) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <div class="table-container" style="height: 320px; position: relative;">
+                    <h4 style="margin-bottom: 10px; color: var(--gold-accent);">Volumen por Etapa (Pipeline)</h4>
+                    <canvas id="chartPipeline"></canvas>
+                </div>
+                <div class="table-container" style="height: 320px; position: relative;">
+                    <h4 style="margin-bottom: 10px; color: var(--gold-accent);">Comisiones Mensuales vs Meta</h4>
+                    <canvas id="chartCommissions"></canvas>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3 style="margin-bottom: 15px; color: var(--gold-accent);">Tratos Prioritarios en Curso</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Propiedad</th>
+                            <th>Cliente</th>
+                            <th>Valor</th>
+                            <th>Etapa</th>
+                            <th>Salud del Trato</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboard-deals-body">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 2. PROPIEDADES VIEW -->
+        <section id="view-properties" class="view-section">
+            <header class="header">
+                <div>
+                    <h1>Gestión de <span>Propiedades</span></h1>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Inventario inmobiliario disponible</p>
+                </div>
+                <button class="btn-gold" onclick="openModal('modal-property')"><i class="fa-solid fa-plus"></i> Nueva Propiedad</button>
+            </header>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Inmueble</th>
+                            <th>Ubicación</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="properties-body">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. LEADS VIEW -->
+        <section id="view-leads" class="view-section">
+            <header class="header">
+                <div>
+                    <h1>Clientes y <span>Leads</span></h1>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Registro de compradores e inversores</p>
+                </div>
+                <button class="btn-gold" onclick="openModal('modal-lead')"><i class="fa-solid fa-plus"></i> Registrar Lead</button>
+            </header>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Teléfono / Email</th>
+                            <th>Presupuesto</th>
+                            <th>Interés / Temperatura</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leads-body">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4. FUNNEL VIEW -->
+        <section id="view-funnel" class="view-section">
+            <header class="header">
+                <div>
+                    <h1>Funnel de Ventas <span>TriON Plus</span></h1>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Progresión comercial por etapas</p>
+                </div>
+            </header>
+
+            <div class="kanban-board">
+                <div class="kanban-column">
+                    <div class="kanban-column-header">1. Contacto <span id="cnt-contacto">0</span></div>
+                    <div id="col-contacto"></div>
+                </div>
+                <div class="kanban-column">
+                    <div class="kanban-column-header">2. Visita <span id="cnt-visita">0</span></div>
+                    <div id="col-visita"></div>
+                </div>
+                <div class="kanban-column">
+                    <div class="kanban-column-header">3. Oferta <span id="cnt-oferta">0</span></div>
+                    <div id="col-oferta"></div>
+                </div>
+                <div class="kanban-column">
+                    <div class="kanban-column-header">4. Cierre <span id="cnt-cierre">0</span></div>
+                    <div id="col-cierre"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. AI COACH VIEW -->
+        <section id="view-aicoach" class="view-section">
+            <header class="header">
+                <div>
+                    <h1>AI Deal Coach & <span>Health Index</span></h1>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Motor de inteligencia predictiva para maximizar cierres</p>
+                </div>
+            </header>
+
+            <div class="ai-grid" id="ai-coach-cards">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+        <!-- 6. SETTINGS VIEW -->
+        <section id="view-settings" class="view-section">
+            <header class="header">
+                <div>
+                    <h1>Configuración <span>TriON Plus</span></h1>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Parámetros del sistema y objetivos</p>
+                </div>
+            </header>
+
+            <div class="table-container" style="max-width: 600px;">
+                <div class="form-group">
+                    <label>Meta Mensual de Ventas ($)</label>
+                    <input type="number" id="setting-goal" value="1000000">
+                </div>
+                <div class="form-group">
+                    <label>Porcentaje de Comisión Base (%)</label>
+                    <input type="number" id="setting-comm" value="3.0">
+                </div>
+                <button class="btn-gold" onclick="alert('Configuración guardada exitosamente')">Guardar Cambios</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: PROPIEDAD -->
+    <div id="modal-property" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Agregar Inmueble</h3>
+                <i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="closeModal('modal-property')"></i>
+            </div>
+            <form onsubmit="saveProperty(event)">
+                <div class="form-group">
+                    <label>Título del Inmueble</label>
+                    <input type="text" id="prop-title" required placeholder="Ej. Penthouse Zona Sur">
+                </div>
+                <div class="form-group">
+                    <label>Ubicación</label>
+                    <input type="text" id="prop-location" required placeholder="Ej. Av. Balcarce #450">
+                </div>
+                <div class="form-group">
+                    <label>Precio ($ USD)</label>
+                    <input type="number" id="prop-price" required placeholder="250000">
+                </div>
+                <button type="submit" class="btn-gold" style="width: 100%;">Guardar Propiedad</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: LEAD -->
+    <div id="modal-lead" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Registrar Prospecto</h3>
+                <i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="closeModal('modal-lead')"></i>
+            </div>
+            <form onsubmit="saveLead(event)">
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="lead-name" required placeholder="Ej. Roberto Gómez">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono / Email</label>
+                    <input type="text" id="lead-contact" required placeholder="+591 70012345">
+                </div>
+                <div class="form-group">
+                    <label>Presupuesto ($ USD)</label>
+                    <input type="number" id="lead-budget" required placeholder="180000">
+                </div>
+                <div class="form-group">
+                    <label>Temperatura del Lead</label>
+                    <select id="lead-temp">
+                        <option value="HOT">Alta (HOT)</option>
+                        <option value="WARM">Media (WARM)</option>
+                        <option value="COLD">Baja (COLD)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-gold" style="width: 100%;">Guardar Lead</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        // Application State Data
+        let properties = [
+            { id: 1, title: 'Penthouse Zona Sur', location: 'Achumani, La Paz', price: 320000, status: 'En Negociación' },
+            { id: 2, title: 'Casa Residencial Los Olivos', location: 'Calacoto, La Paz', price: 450000, status: 'Disponible' },
+            { id: 3, title: 'Dpto 3D Moderno', location: 'Equipetrol, Santa Cruz', price: 185000, status: 'En Negociación' }
+        ];
+
+        let leads = [
+            { id: 1, name: 'Carlos Mendoza', contact: '76543210', budget: 300000, temp: 'HOT' },
+            { id: 2, name: 'Lucía Torres', contact: 'lucia@gmail.com', budget: 190000, temp: 'WARM' }
+        ];
+
+        let deals = [
+            { id: 1, prop: 'Penthouse Zona Sur', client: 'Carlos Mendoza', value: 320000, stage: 'Oferta', health: 85, lastContactDays: 2 },
+            { id: 2, prop: 'Dpto 3D Moderno', client: 'Lucía Torres', value: 185000, stage: 'Visita', health: 45, lastContactDays: 6 }
+        ];
+
+        // Chart References
+        let pipelineChart = null;
+        let commissionsChart = null;
+
+        // Tab Navigation
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            document.getElementById('view-' + tabId).classList.add('active');
+            btnElement.parentElement.classList.add('active');
+
+            renderAll();
+        }
+
+        // Modals
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // Data Saving
+        function saveProperty(e) {
+            e.preventDefault();
+            const title = document.getElementById('prop-title').value;
+            const location = document.getElementById('prop-location').value;
+            const price = parseFloat(document.getElementById('prop-price').value);
+
+            properties.push({ id: Date.now(), title, location, price, status: 'Disponible' });
+            closeModal('modal-property');
+            e.target.reset();
+            renderAll();
+        }
+
+        function saveLead(e) {
+            e.preventDefault();
+            const name = document.getElementById('lead-name').value;
+            const contact = document.getElementById('lead-contact').value;
+            const budget = parseFloat(document.getElementById('lead-budget').value);
+            const temp = document.getElementById('lead-temp').value;
+
+            leads.push({ id: Date.now(), name, contact, budget, temp });
+            closeModal('modal-lead');
+            e.target.reset();
+            renderAll();
+        }
+
+        function advanceDeal(dealId) {
+            const deal = deals.find(d => d.id === dealId);
+            const stages = ['Contacto', 'Visita', 'Oferta', 'Cierre'];
+            let idx = stages.indexOf(deal.stage);
+            if(idx < stages.length - 1) {
+                deal.stage = stages[idx + 1];
+                deal.health = Math.min(100, deal.health + 15);
+                renderAll();
+            }
+        }
+
+        // Global Render
+        function renderAll() {
+            renderDashboard();
+            renderProperties();
+            renderLeads();
+            renderFunnel();
+            renderAICoach();
+        }
+
+        function renderDashboard() {
+            const totalVol = deals.reduce((acc, d) => acc + d.value, 0);
+            document.getElementById('kpi-volume').innerText = '$' + totalVol.toLocaleString();
+            document.getElementById('kpi-commissions').innerText = '$' + (totalVol * 0.03).toLocaleString();
+            document.getElementById('kpi-leads').innerText = leads.length;
+
+            const tbody = document.getElementById('dashboard-deals-body');
+            tbody.innerHTML = deals.map(d => `
+                <tr>
+                    <td><strong>${d.prop}</strong></td>
+                    <td>${d.client}</td>
+                    <td>$${d.value.toLocaleString()}</td>
+                    <td><span class="badge badge-warm">${d.stage}</span></td>
+                    <td>
+                        <strong style="color: ${d.health > 70 ? 'var(--success)' : 'var(--danger)'}">
+                            ${d.health}%
+                        </strong>
+                    </td>
+                </tr>
+            `).join('');
+
+            renderCharts();
+        }
+
+        function renderCharts() {
+            // 1. Pipeline Chart (Doughnut)
+            const stages = ['Contacto', 'Visita', 'Oferta', 'Cierre'];
+            const stageValues = stages.map(stg => {
+                return deals.filter(d => d.stage === stg).reduce((sum, d) => sum + d.value, 0);
+            });
+
+            if (pipelineChart) pipelineChart.destroy();
+
+            const ctx1 = document.getElementById('chartPipeline').getContext('2d');
+            pipelineChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: stages,
+                    datasets: [{
+                        data: stageValues,
+                        backgroundColor: ['#1C2951', '#2A3F78', '#D4AF37', '#10B981'],
+                        borderColor: '#111C3A',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#F8FAFC', font: { family: 'Segoe UI' } } }
+                    }
+                }
+            });
+
+            // 2. Commissions vs Goal Chart (Bar)
+            if (commissionsChart) commissionsChart.destroy();
+
+            const ctx2 = document.getElementById('chartCommissions').getContext('2d');
+            commissionsChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['May', 'Jun', 'Jul', 'Ago (Actual)'],
+                    datasets: [
+                        {
+                            label: 'Comisión Realizada ($)',
+                            data: [12000, 18500, 21000, deals.reduce((acc, d) => acc + d.value, 0) * 0.03],
+                            backgroundColor: '#D4AF37',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Meta Mensual ($)',
+                            data: [15000, 15000, 20000, 25000],
+                            backgroundColor: 'rgba(148, 163, 184, 0.2)',
+                            borderColor: '#94A3B8',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#94A3B8' }, grid: { display: false } },
+                        y: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(212, 175, 55, 0.1)' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#F8FAFC' } }
+                    }
+                }
+            });
+        }
+
+        function renderProperties() {
+            const tbody = document.getElementById('properties-body');
+            tbody.innerHTML = properties.map(p => `
+                <tr>
+                    <td><strong>${p.title}</strong></td>
+                    <td>${p.location}</td>
+                    <td>$${p.price.toLocaleString()}</td>
+                    <td><span class="badge ${p.status === 'Disponible' ? 'badge-success' : 'badge-warning'}">${p.status}</span></td>
+                    <td><button class="btn-gold" style="padding: 4px 8px; font-size:0.75rem;" onclick="alert('Editar propiedad')">Editar</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderLeads() {
+            const tbody = document.getElementById('leads-body');
+            tbody.innerHTML = leads.map(l => `
+                <tr>
+                    <td><strong>${l.name}</strong></td>
+                    <td>${l.contact}</td>
+                    <td>$${l.budget.toLocaleString()}</td>
+                    <td><span class="badge badge-${l.temp.toLowerCase()}">${l.temp}</span></td>
+                    <td><button class="btn-gold" style="padding: 4px 8px; font-size:0.75rem;" onclick="alert('Llamando a cliente...')">Contactar</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderFunnel() {
+            const stages = ['contacto', 'visita', 'oferta', 'cierre'];
+            stages.forEach(stg => {
+                const col = document.getElementById('col-' + stg);
+                const filtered = deals.filter(d => d.stage.toLowerCase() === stg);
+                document.getElementById('cnt-' + stg).innerText = filtered.length;
+
+                col.innerHTML = filtered.map(d => `
+                    <div class="kanban-card" onclick="advanceDeal(${d.id})">
+                        <strong style="color: var(--gold-accent); display:block; margin-bottom:4px;">${d.prop}</strong>
+                        <small style="color: var(--text-muted);">${d.client}</small>
+                        <div style="margin-top:8px; display:flex; justify-content:space-between; font-size:0.8rem;">
+                            <span>$${d.value.toLocaleString()}</span>
+                            <span style="color:var(--gold-light);">Mover ➔</span>
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function renderAICoach() {
+            const container = document.getElementById('ai-coach-cards');
+            container.innerHTML = deals.map(d => {
+                const isRisk = d.lastContactDays > 4;
+                return `
+                    <div class="ai-card-item" style="border-left-color: ${isRisk ? 'var(--danger)' : 'var(--gold-accent)'}">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <h4>${d.prop}</h4>
+                            <span class="badge ${isRisk ? 'badge-danger' : 'badge-success'}">
+                                ${isRisk ? 'Riesgo de Fuga' : 'Cierre Prometedor'}
+                            </span>
+                        </div>
+                        <p style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 10px;">
+                            Cliente: <strong>${d.client}</strong> | Último contacto: hace ${d.lastContactDays} días.
+                        </p>
+                        <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius:6px;">
+                            <small style="color: var(--gold-accent); font-weight:bold; display:block; margin-bottom:4px;">
+                                🤖 Recomendación TriON Plus AI:
+                            </small>
+                            <small style="color:#fff;">
+                                ${isRisk 
+                                    ? 'Inactividad detectada. Enviar informe comparativo de zona para reactivar interés hoy mismo.' 
+                                    : 'Avanzar a la firma de promesa de compraventa. La probabilidad de cierre es del ' + d.health + '%.'}
+                            </small>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // App Initialization
+        window.onload = () => {
+            renderAll();
+        };
+    </script>
+</body>
+</html>
